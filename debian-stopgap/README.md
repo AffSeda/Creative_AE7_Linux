@@ -12,6 +12,9 @@ failed or missing build means a silent AE-7, never a frozen machine.
 - The `linux-source` metapackage, so the source follows kernel updates:
   `apt install linux-source`.
 
+**Quick install:** `sudo ./install.sh`. **Remove:** `sudo ./uninstall.sh`, then keep the
+card off the stock driver or it will hang again. The details follow.
+
 ## Pieces
 
 | File | Install to | Purpose |

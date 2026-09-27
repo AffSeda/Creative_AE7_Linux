@@ -22,6 +22,88 @@ working (blunt) fix:
 Start with **[ANALYSIS.md](ANALYSIS.md)**. It has the test matrix, the evidence, what is
 proven and what is inferred, and a suggested shape for a proper upstream fix.
 
+## Using the workaround now
+
+This is for people with the ASM1083-bridge AE-7 who want sound before a real kernel fix
+exists. It replaces four sound modules with rebuilt ones, so read the whole section first.
+
+**Check that this is your card:**
+- `lspci -nn` must show both
+  `Creative Labs CA0132 Sound Core3D [1102:0010]` and
+  `ASMedia ASM1083/1085 PCIe to PCI Bridge [1b21:1080]`.
+- If there is no ASMedia bridge, you have the IDT revision, which already works and
+  does not need this.
+
+**Requirements:**
+- **Secure Boot must be off.** The rebuilt modules are unsigned, and the installer
+  refuses to run with Secure Boot on. If you sign your own modules, you can adapt it.
+- Root access and about 1 GB free (the kernel source package).
+- A distribution and kernel in one of these groups:
+
+| Your system | Route |
+|---|---|
+| **Debian** (tested on Debian forky, kernel 7.2.6) | Automated: `debian-stopgap/install.sh` below |
+| Ubuntu, Mint, other Debian derivatives | Not tested. The script expects Debian's `linux-source-X.Y` package naming and versioning; it has not been checked against Ubuntu's. Use the manual route unless you adapt it. |
+| Other distributions | Manual route |
+| Kernels that still keep HDA under `sound/pci/hda/` (older kernels) | The patch needs adapting to the old file paths. The change itself is small. |
+
+### Debian: automated install
+
+```bash
+git clone https://github.com/AffSeda/Creative_AE7_Linux.git
+cd Creative_AE7_Linux/debian-stopgap
+sudo ./install.sh
+```
+
+The installer does the following:
+1. Checks for the card and the bridge, and refuses to run with Secure Boot on.
+2. Installs `linux-source` and the kernel headers.
+3. Builds patched modules for the running kernel and installs them in
+   `/lib/modules/<kernel>/updates/ae7/`.
+4. Sets up automatic rebuilds for future kernel updates.
+
+If the installer lists settings you added earlier to keep the card away from
+`snd_hda_intel` (a `blacklist`, or `vfio-pci`/`pci-stub` ids for `1102:0010`), remove
+them. Then reboot. After the reboot:
+- `lspci -k -d 1102:0010` should say `Kernel driver in use: snd_hda_intel`;
+- the card should appear as an output device.
+- On AE-7 the analogue output can be switched between Speakers and Headphone. Choose
+  the port you want in your sound settings (PipeWire/PulseAudio).
+
+**Safety net:** a kernel can end up without a patched build. For example, a kernel update
+may arrive before its matching source package, or the patch may stop applying to a newer
+kernel. In that case a guard keeps the card away from the driver at boot. The card is
+silent on that kernel and the machine does not hang. Check `/var/log/ae7-hda-build.log`
+and `journalctl -t ae7-hda-guard`.
+
+**To remove it:** run `sudo ./uninstall.sh`. Before rebooting, either remove the card or
+keep it off the stock driver yourself (for example with the kernel parameter
+`pci-stub.ids=1102:0010`). Otherwise the stock driver will hang the machine again.
+
+### Manual route (any distribution)
+
+This route assumes you know how to build kernel modules.
+
+1. Get the source for **exactly** your running kernel, and the matching headers or build tree.
+2. Apply `patches/workaround-flush-every-hda-write.patch`. It touches
+   `include/sound/hdaudio.h` and `sound/hda/codecs/ca0132.c`.
+3. Build `snd-hda-core`, `snd-hda-codec`, `snd-hda-intel` and `snd-hda-codec-ca0132`
+   with the patched `hdaudio.h`. All four inline the changed register-write helpers.
+   - For out-of-tree builds with `make M=...`: the kernel's own include path comes first,
+     so put the patched header ahead of it. `debian-stopgap/ae7-hda-build` shows one way:
+     `NOSTDINC_FLAGS="-nostdinc -I<dir containing sound/hdaudio.h>"`.
+4. Install the four `.ko` files where they override the stock ones, such as
+   `/lib/modules/$(uname -r)/updates/`. Then run `depmod -a` and rebuild your initramfs.
+5. Protect yourself from kernel updates: either rebuild for every new kernel, or keep
+   the card off `snd_hda_intel` on kernels you have not rebuilt for. The guard in
+   `debian-stopgap/ae7-hda-guard` is one way to do that.
+
+### Reporting results
+
+Reports are useful, whether it works or not. Include your board or chipset, `lspci -nn`
+(the bridge revision), your kernel version, and what happened. They help establish how
+widely the fix applies (other boards, bridge revisions, the AE-9).
+
 ## Layout
 
 | Path | What |
