@@ -58,6 +58,13 @@ these:
 - **Secure Boot must be off.** The rebuilt modules are unsigned, and the installer
   refuses to run with Secure Boot on. If you sign your own modules, you can adapt it.
 - Root access and about 1 GB free (the kernel source package).
+- **Be on the newest kernel your Debian release offers.** Update with `apt full-upgrade`
+  and reboot first. The build needs Debian's kernel source at exactly your running
+  kernel's version, and apt normally only offers the newest. The installer stops with an
+  explanation if that version is missing.
+  - Backports kernels need the same backports suite enabled.
+  - The `linux-source` metapackage follows the stable kernel series, so on a backports
+    kernel check `/var/log/ae7-hda-build.log` after each kernel update.
 - A distribution and kernel in one of these groups:
 
 | Your system | Route |
@@ -78,7 +85,10 @@ sudo ./install.sh
 The installer does the following:
 1. Checks for the card and the bridge (only asking if they are missing), and refuses to
    run with Secure Boot on.
-2. Installs `linux-source` and the kernel headers.
+2. Installs the kernel headers, and the kernel source at exactly your running kernel's
+   version.
+   - If that version is not available from your apt sources, it stops and tells you to
+     update your kernel first.
 3. Builds patched modules for the running kernel and installs them in
    `/lib/modules/<kernel>/updates/ae7/`.
 4. Sets up automatic rebuilds for future kernel updates.
@@ -96,6 +106,10 @@ may arrive before its matching source package, or the patch may stop applying to
 kernel. In that case a guard keeps the card away from the driver at boot. The card is
 silent on that kernel and the machine does not hang. Check `/var/log/ae7-hda-build.log`
 and `journalctl -t ae7-hda-guard`.
+- If the guard cannot confirm the card is parked, it refuses to load the sound driver at
+  all for that boot. You then get no HDA audio on any device, rather than a hang.
+- The guard parks the card at runtime with `pci-stub`. The manual method below uses
+  `vfio-pci`, because that one can be written as static configuration.
 
 **To remove it:** run `sudo ./uninstall.sh`. Before rebooting, either take the card out
 or keep it away from the stock driver, or the machine will hang again. To keep the card
@@ -145,6 +159,8 @@ widely the fix applies (other boards, bridge revisions, the AE-9).
 ## Status and limits
 
 - Tested on one machine: AMD X399 (Threadripper 2990WX), Debian kernel 7.2.6 PREEMPT_RT.
+- With the patched build, only warm reboots have been tested. A cold power-on (for
+  example after option A's shut-down-and-fit step) has not been tested yet.
 - The card's owner reports the same hang on other PCs, including an AMD 990FX system.
 - Only the rev 03 bridge was available.
 - The workaround flushes writes on **every** HDA controller in the system. That is fine

@@ -1,6 +1,15 @@
-# sysrq-l (NMI backtraces of all CPUs) 1-5 s after binding the stock driver.
-# CPUs 0 and 1 never answer the NMI in any of the four captures (consistent with a CPU stalled on an MMIO read that never completes).
-# Other CPUs pile up in cpa_flush()->on_each_cpu (IPI to the stuck CPUs) from set_memory_wc/set_memory_rw callers.
+# sysrq-l (NMI backtraces of all CPUs) taken 1, 2, 3 and 5 s after binding the stock driver (64-CPU host).
+# Which CPUs produced any NMI output in each capture:
+#   +1s: 29 of 64 CPUs reported (answered or "skipped: idling"): 2 5 7 12 13 14 15 16 17 18 19 21 23 24 27 32 39 44 45 46 47 48 49 50 51 53 54 55 62 
+#   +2s:  7 of 64 CPUs reported (answered or "skipped: idling"): 4 5 6 30 33 36 38 
+#   +3s: 18 of 64 CPUs reported (answered or "skipped: idling"): 2 3 4 6 7 13 14 34 35 36 38 39 45 46 48 49 56 63 
+#   +5s: 10 of 64 CPUs reported (answered or "skipped: idling"): 2 3 12 14 34 35 44 45 46 56 
+# CPUs 0 and 1 are absent from all four captures. CAVEAT: netconsole is UDP and output from many
+# other CPUs was also lost in some captures, so this absence is suggestive, not proof, that CPUs 0/1
+# could not take the NMI. The ftrace capture (02) independently shows CPU 0 stuck in init_cmd_io.
+# Below (register dumps trimmed): the +1 s capture, in which CPU 5 spins in cpa_flush() waiting on
+# an IPI (set_memory_rw via do_free_init); then, from the +3 s capture, CPU 6 spinning the same way
+# from set_memory_wc (snd_dma_wc_alloc). The IPIs are not being answered.
 [  737.784466] AE7 TEST4 driver bind + sysrq-l capture 09:26:31
 [  737.788117] snd_hda_intel 0000:08:00.0: enabling device (0000 -> 0002)
 [  737.788216] snd_hda_intel 0000:08:00.0: Force to non-snoop mode
@@ -109,3 +118,33 @@
 [  738.790429]  ? srso_return_thunk+0x5/0x5f
 [  738.790434]  __x64_sys_execve+0x3d/0x60
 [  738.790596] NMI backtrace for cpu 24 skipped: idling at io_idle+0x3/0x30
+
+# ---- +3 s capture, CPU 6 ----
+[  741.023424] NMI backtrace for cpu 6
+[  741.023429] CPU: 6 UID: 0 PID: 43611 Comm: (udev-worker) Tainted: G S         OE       7.2.6+deb14-rt-amd64 #1 PREEMPT_{RT,(full)}  Debian 7.2.6-1 
+[  741.023434] Tainted: [S]=CPU_OUT_OF_SPEC, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+[  741.023435] Hardware name: ASUS System Product Name/ROG ZENITH EXTREME ALPHA, BIOS 2701 02/02/2024
+[  741.023470] Call Trace:
+[  741.023473]  <TASK>
+[  741.023476]  ? __pfx_do_flush_tlb_all+0x10/0x10
+[  741.023484]  on_each_cpu_cond_mask+0x24/0x40
+[  741.023487]  cpa_flush+0xa9/0x350
+[  741.023493]  ? srso_return_thunk+0x5/0x5f
+[  741.023496]  change_page_attr_set_clr+0x16f/0x1d0
+[  741.023503]  _set_memory_wc+0x37/0x80
+[  741.023506]  set_memory_wc+0x83/0xd0
+[  741.023509]  ? make_alloc_exact+0x7f/0x140
+[  741.023517]  do_alloc_pages+0xca/0xd0 [snd_pcm]
+[  741.023531]  snd_dma_wc_alloc+0x33/0x130 [snd_pcm]
+[  741.023541]  ? srso_return_thunk+0x5/0x5f
+[  741.023544]  snd_dma_sg_alloc+0x71/0x370 [snd_pcm]
+[  741.023557]  ? srso_return_thunk+0x5/0x5f
+[  741.023560]  ? __pfx_snd_dma_sg_alloc+0x10/0x10 [snd_pcm]
+[  741.023569]  snd_dma_alloc_dir_pages+0x94/0x120 [snd_pcm]
+[  741.023578]  ? rt_spin_trylock+0x21/0x90
+[  741.023754]  ? srso_return_thunk+0x5/0x5f
+[  741.023757]  do_syscall_64+0xe1/0x650
+[  741.023765]  ? srso_return_thunk+0x5/0x5f
+[  741.023767]  ? do_syscall_64+0x98/0x650
+[  741.023770]  ? exc_page_fault+0x90/0x1e0
+[  741.023774]  entry_SYSCALL_64_after_hwframe+0x76/0x7e

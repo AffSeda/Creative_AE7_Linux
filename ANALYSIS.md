@@ -58,7 +58,7 @@ netconsole. The card was held on `pci-stub` at boot and handed to a driver at ru
 | 4 | Stock, `amd_iommu=off` (swiotlb kept) | Hang |
 | 5 | Stock, with the desktop sound server stopped | Hang |
 | 6 | ftrace `function_graph` of the stock probe | CPU stops inside `snd_hdac_bus_init_cmd_io()`; `snd_hdac_bus_reset_link()` returned normally ([02](evidence/02-ftrace-probe-stops-in-init_cmd_io.txt)) |
-| 7 | sysrq-l 1-5 s after the stock bind | CPUs 0 and 1 never answer the NMI; others spin in `cpa_flush()` IPIs to them ([03](evidence/03-nmi-backtraces-stock-driver.txt)) |
+| 7 | sysrq-l 1-5 s after the stock bind | CPUs 0 and 1 are absent from all four NMI captures; others spin in `cpa_flush()` waiting on IPIs. Netconsole is lossy, so the absence is suggestive only ([03](evidence/03-nmi-backtraces-stock-driver.txt)) |
 | 8 | `tools/ae7probe`: hand bring-up, one register op per step, with reads and log output between ops | OK: reset, CORB/RIRB DMA, `GET_PARAMETER` answered `0x11020011`, UNSOL, INTCTL, real INTx handler, write-combining pages ([04](evidence/04-hand-bringup-works.txt)) |
 | 9 | `ae7probe intclr=1`: `azx_int_clear()` writes one at a time, each flushed | OK |
 | 10 | `ae7probe exact=1 flush=0`: `snd_hdac_bus_init_chip()` replayed with the driver's widths, values and order, no intervening reads | **Hang** ([05](evidence/05-exact-init-sequence-hang-vs-flush.txt)) |
@@ -78,7 +78,7 @@ Rows 10 and 11 are the key pair. The two runs differ only by the flushing reads.
 - **Inferred, not proven:** the defect is in the ASM1083 rev 03's handling of queued
   posted writes to this conventional-PCI target (a buffer or retry issue). The wedged
   bridge then stalls the CPU's next non-posted read forever. A CPU stuck on an MMIO
-  read cannot take an NMI, which matches row 7. Any other access to the same chipset
+  read cannot take an NMI, which is consistent with row 7, though not proven by it. Any other access to the same chipset
   path then stalls too, which would explain why the platform EC stops answering.
   - The facts that point at the bridge: the IDT-bridge revision of the card is
     reported to work, and the controller's own register interface behaves correctly

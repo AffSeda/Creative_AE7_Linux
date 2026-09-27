@@ -2,12 +2,25 @@
 # modprobe "install" hook for snd_hda_intel (see /etc/modprobe.d/ae7-hda.conf).
 # The stock snd_hda_intel hard-locks any machine with a Creative AE-7 (ASMedia ASM1083
 # bridge) through a posted-write burst. Only hand the card to snd_hda_intel when this
-# kernel has the patched modules built by ae7-hda-build; otherwise park it on pci-stub
-# so the rest of the system's audio still loads and the machine does not hang.
+# kernel has the patched modules built by ae7-hda-build. Otherwise park it on pci-stub,
+# and load snd_hda_intel for the other audio devices ONLY once every AE-7 is verifiably
+# held by pci-stub or vfio-pci. If parking cannot be verified, refuse to load snd_hda_intel
+# at all (no HDA audio this boot) rather than risk the hang: this guard fails closed.
 k=$(uname -r)
 if [ ! -f "/lib/modules/$k/updates/ae7/.built-ok" ]; then
 	logger -t ae7-hda-guard "no patched HDA modules for $k: parking AE-7 (1102:0010) on pci-stub"
-	/sbin/modprobe pci-stub
-	echo "1102 0010" > /sys/bus/pci/drivers/pci-stub/new_id 2>/dev/null || true
+	/sbin/modprobe pci-stub 2>/dev/null
+	echo "1102 0010" > /sys/bus/pci/drivers/pci-stub/new_id 2>/dev/null
+	for d in /sys/bus/pci/devices/*; do
+		[ "$(cat "$d/vendor" 2>/dev/null)" = 0x1102 ] && [ "$(cat "$d/device" 2>/dev/null)" = 0x0010 ] || continue
+		[ -e "$d/driver" ] || echo "${d##*/}" > /sys/bus/pci/drivers/pci-stub/bind 2>/dev/null
+		drv=
+		[ -e "$d/driver" ] && drv=$(basename "$(readlink -f "$d/driver")")
+		case "$drv" in
+			pci-stub|vfio-pci) ;;
+			*)	logger -t ae7-hda-guard "could not park ${d##*/} (driver: ${drv:-none}); NOT loading snd_hda_intel on $k (no HDA audio this boot) to avoid the AE-7 hang"
+				exit 1 ;;
+		esac
+	done
 fi
 exec /sbin/modprobe --ignore-install snd_hda_intel "$@"

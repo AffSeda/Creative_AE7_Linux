@@ -35,6 +35,8 @@ build_one() {
 	|| { log "$k: FAILED to extract or apply the patch (source changed?); see $LOG"; rm -rf "$w"; return 1; }
 	mkdir -p "$w/ovr/sound" && cp "$s/include/sound/hdaudio.h" "$w/ovr/sound/"
 	local d ok=1
+	# Cross-module symbols resolve from the kernel's own Module.symvers (it lists every in-tree
+	# export, e.g. snd-hda-codec's); only snd-hda-core's freshly built symvers is added explicitly.
 	local extra
 	for d in core common controllers codecs; do
 		extra=; [ "$d" != core ] && extra="KBUILD_EXTRA_SYMBOLS=$s/sound/hda/core/Module.symvers"
@@ -56,7 +58,7 @@ build_one() {
 }
 
 case "${1:-}" in
-	--all) rc=0; for k in $(ls /lib/modules); do [ -d "/lib/modules/$k/kernel" ] && { build_one "$k" || rc=1; }; done; exit $rc ;;
+	--all) rc=0; for kd in /lib/modules/*/; do k=$(basename "$kd"); [ -d "/lib/modules/$k/kernel" ] && { build_one "$k" || rc=1; }; done; exit $rc ;;
 	"") echo "usage: $0 <kernel-version> | --all" >&2; exit 2 ;;
 	*) build_one "$1" ;;
 esac

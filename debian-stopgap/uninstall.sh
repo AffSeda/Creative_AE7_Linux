@@ -10,7 +10,7 @@ rm -f /etc/systemd/system/ae7-hda-build.service /etc/apt/apt.conf.d/99ae7-hda \
 rm -rf /usr/local/lib/ae7 /lib/modules/*/updates/ae7
 systemctl daemon-reload
 for k in /lib/modules/*/; do depmod -a "$(basename "$k")"; done
-update-initramfs -u
+update-initramfs -u -k all
 echo "Removed. WARNING: with the card installed, the stock driver will hang this machine on next boot."
 echo "Remove the card, or keep it off snd_hda_intel by handing it to vfio-pci, e.g. create"
 echo "/etc/modprobe.d/ae7-park.conf containing these two lines and run update-initramfs -u:"
