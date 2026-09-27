@@ -1,0 +1,17 @@
+# Same module, exact=1: replays the driver's snd_hdac_bus_init_chip() sequence (reset_link, azx_int_clear, init_cmd_io)
+# with the driver's exact access widths, values and order, and no intervening reads.
+## flush=0 (driver-identical): marker, then nothing; EC timeouts ~5 s later; machine hard-locks.
+[  328.876355] AE7 MOD [irq hits=0 mine=0] S2 enter reset ...
+[  328.876363] AE7 MOD [irq hits=0 mine=0]   entered=1
+[  328.876365] AE7 MOD [irq hits=0 mine=0] S3 exit reset ...
+[  328.876578] AE7 MOD [irq hits=0 mine=0]   exited=1
+[  328.882035] AE7 MOD [irq hits=0 mine=0]   STATESTS=0x0002
+[  328.882066] AE7 MOD [irq hits=0 mine=0] SX exact driver init_chip, flush=0 ...
+[  333.858132] ACPI Error: AE_TIME, Returned by Handler for [EmbeddedControl] (20260408/evregion-303)
+[  333.858165] ACPI Error: Aborting method \_SB.PCI0.SBRG.EC0.ECFX due to previous error (AE_TIME) (20260408/psparse-543)
+[  333.858177] ACPI Error: Aborting method \_SB.PCI0.SBRG.EC0.ECCM due to previous error (AE_TIME) (20260408/psparse-543)
+
+## flush=1 (identical, but a read-back of offset 0 after EVERY write): completes; machine healthy.
+[  191.764251] AE7 MOD [irq hits=0 mine=0] SX exact driver init_chip, flush=1 ...
+[  192.071526] AE7 MOD [irq hits=0 mine=0] SX survived: GCTL=0x00000101 CORBRP=0x0000 RIRBCTL=0x03
+[  192.080050] AE7 MOD [irq hits=0 mine=0] clean exit

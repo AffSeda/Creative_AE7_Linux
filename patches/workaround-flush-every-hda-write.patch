@@ -1,0 +1,251 @@
+diff -ruN a/include/sound/hdaudio.h b/include/sound/hdaudio.h
+--- a/include/sound/hdaudio.h	2026-09-27 10:01:58.427893891 +1000
++++ b/include/sound/hdaudio.h	2026-09-27 10:01:58.429935438 +1000
+@@ -435,6 +435,7 @@
+ 		snd_hdac_aligned_write(val, addr, 0xff);
+ 	else
+ 		writeb(val, addr);
++	(void)readb(addr); /* AE-7/ASM1083: flush posted write */
+ }
+ 
+ static inline void snd_hdac_reg_writew(struct hdac_bus *bus, void __iomem *addr,
+@@ -444,6 +445,7 @@
+ 		snd_hdac_aligned_write(val, addr, 0xffff);
+ 	else
+ 		writew(val, addr);
++	(void)readw(addr); /* AE-7/ASM1083: flush posted write */
+ }
+ 
+ static inline u8 snd_hdac_reg_readb(struct hdac_bus *bus, void __iomem *addr)
+@@ -458,7 +460,7 @@
+ 		snd_hdac_aligned_read(addr, 0xffff) : readw(addr);
+ }
+ 
+-#define snd_hdac_reg_writel(bus, addr, val)	writel(val, addr)
++#define snd_hdac_reg_writel(bus, addr, val)	do { void __iomem *__a = (addr); writel(val, __a); (void)readl(__a); } while (0) /* AE-7/ASM1083 */
+ #define snd_hdac_reg_readl(bus, addr)	readl(addr)
+ #define snd_hdac_reg_writeq(bus, addr, val)	writeq(val, addr)
+ #define snd_hdac_reg_readq(bus, addr)		readq(addr)
+diff -ruN a/sound/hda/codecs/ca0132.c b/sound/hda/codecs/ca0132.c
+--- a/sound/hda/codecs/ca0132.c	2026-09-27 10:01:58.431315184 +1000
++++ b/sound/hda/codecs/ca0132.c	2026-09-27 10:01:58.434118530 +1000
+@@ -3656,7 +3656,7 @@
+ 	gpio_data = gpio_pin & 0xF;
+ 	gpio_data |= ((enable << 8) & 0x100);
+ 
+-	writew(gpio_data, spec->mem_base + 0x320);
++	{ writew(gpio_data, spec->mem_base + 0x320); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ }
+ 
+ /*
+@@ -3673,21 +3673,21 @@
+ 	struct ca0132_spec *spec = codec->spec;
+ 	unsigned int write_val;
+ 
+-	writel(0x0000007e, spec->mem_base + 0x210);
++	{ writel(0x0000007e, spec->mem_base + 0x210); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	readl(spec->mem_base + 0x210);
+-	writel(0x0000005a, spec->mem_base + 0x210);
++	{ writel(0x0000005a, spec->mem_base + 0x210); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	readl(spec->mem_base + 0x210);
+ 	readl(spec->mem_base + 0x210);
+ 
+-	writel(0x00800005, spec->mem_base + 0x20c);
+-	writel(group, spec->mem_base + 0x804);
++	{ writel(0x00800005, spec->mem_base + 0x20c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writel(group, spec->mem_base + 0x804); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+-	writel(0x00800005, spec->mem_base + 0x20c);
++	{ writel(0x00800005, spec->mem_base + 0x20c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	write_val = (target & 0xff);
+ 	write_val |= (value << 8);
+ 
+ 
+-	writel(write_val, spec->mem_base + 0x204);
++	{ writel(write_val, spec->mem_base + 0x204); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	/*
+ 	 * Need delay here or else it goes too fast and works inconsistently.
+ 	 */
+@@ -3697,8 +3697,8 @@
+ 	readl(spec->mem_base + 0x854);
+ 	readl(spec->mem_base + 0x840);
+ 
+-	writel(0x00800004, spec->mem_base + 0x20c);
+-	writel(0x00000000, spec->mem_base + 0x210);
++	{ writel(0x00800004, spec->mem_base + 0x20c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writel(0x00000000, spec->mem_base + 0x210); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	readl(spec->mem_base + 0x210);
+ 	readl(spec->mem_base + 0x210);
+ }
+@@ -3712,28 +3712,28 @@
+ 	struct ca0132_spec *spec = codec->spec;
+ 	unsigned int write_val;
+ 
+-	writel(0x0000007e, spec->mem_base + 0x210);
++	{ writel(0x0000007e, spec->mem_base + 0x210); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	readl(spec->mem_base + 0x210);
+-	writel(0x0000005a, spec->mem_base + 0x210);
++	{ writel(0x0000005a, spec->mem_base + 0x210); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	readl(spec->mem_base + 0x210);
+ 	readl(spec->mem_base + 0x210);
+ 
+-	writel(0x00800003, spec->mem_base + 0x20c);
+-	writel(group, spec->mem_base + 0x804);
++	{ writel(0x00800003, spec->mem_base + 0x20c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writel(group, spec->mem_base + 0x804); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+-	writel(0x00800005, spec->mem_base + 0x20c);
++	{ writel(0x00800005, spec->mem_base + 0x20c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	write_val = (target & 0xff);
+ 	write_val |= (value << 8);
+ 
+ 
+-	writel(write_val, spec->mem_base + 0x204);
++	{ writel(write_val, spec->mem_base + 0x204); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	msleep(20);
+ 	readl(spec->mem_base + 0x860);
+ 	readl(spec->mem_base + 0x854);
+ 	readl(spec->mem_base + 0x840);
+ 
+-	writel(0x00800004, spec->mem_base + 0x20c);
+-	writel(0x00000000, spec->mem_base + 0x210);
++	{ writel(0x00800004, spec->mem_base + 0x20c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writel(0x00000000, spec->mem_base + 0x210); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	readl(spec->mem_base + 0x210);
+ 	readl(spec->mem_base + 0x210);
+ }
+@@ -7904,18 +7904,18 @@
+ 	chipio_8051_write_direct(codec, 0x93, 0x10);
+ 	chipio_8051_write_pll_pmu(codec, 0x44, 0xc2);
+ 
+-	writeb(0xff, spec->mem_base + 0x304);
+-	writeb(0xff, spec->mem_base + 0x304);
+-	writeb(0xff, spec->mem_base + 0x304);
+-	writeb(0xff, spec->mem_base + 0x304);
+-	writeb(0x00, spec->mem_base + 0x100);
+-	writeb(0xff, spec->mem_base + 0x304);
+-	writeb(0x00, spec->mem_base + 0x100);
+-	writeb(0xff, spec->mem_base + 0x304);
+-	writeb(0x00, spec->mem_base + 0x100);
+-	writeb(0xff, spec->mem_base + 0x304);
+-	writeb(0x00, spec->mem_base + 0x100);
+-	writeb(0xff, spec->mem_base + 0x304);
++	{ writeb(0xff, spec->mem_base + 0x304); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0xff, spec->mem_base + 0x304); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0xff, spec->mem_base + 0x304); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0xff, spec->mem_base + 0x304); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0x00, spec->mem_base + 0x100); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0xff, spec->mem_base + 0x304); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0x00, spec->mem_base + 0x100); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0xff, spec->mem_base + 0x304); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0x00, spec->mem_base + 0x100); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0xff, spec->mem_base + 0x304); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0x00, spec->mem_base + 0x100); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writeb(0xff, spec->mem_base + 0x304); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+ 	ca0113_mmio_command_set(codec, 0x30, 0x2b, 0x3f);
+ 	ca0113_mmio_command_set(codec, 0x30, 0x2d, 0x3f);
+@@ -8837,9 +8837,9 @@
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < 4; i++)
+-		writeb(0x0, spec->mem_base + 0x100);
++		{ writeb(0x0, spec->mem_base + 0x100); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	for (i = 0; i < 8; i++)
+-		writeb(0xb3, spec->mem_base + 0x304);
++		{ writeb(0xb3, spec->mem_base + 0x304); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+ 	ca0113_mmio_gpio_set(codec, 0, false);
+ 	ca0113_mmio_gpio_set(codec, 1, false);
+@@ -9121,8 +9121,8 @@
+ {
+ 	struct ca0132_spec *spec = codec->spec;
+ 
+-	writel(0x00820680, spec->mem_base + 0x01C);
+-	writel(0x00820680, spec->mem_base + 0x01C);
++	{ writel(0x00820680, spec->mem_base + 0x01C); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++	{ writel(0x00820680, spec->mem_base + 0x01C); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+ 	chipio_write(codec, 0x18b0a4, 0x000000c2);
+ 
+@@ -9238,7 +9238,7 @@
+ 
+ 	addr = ca0113_mmio_init_address_sbz;
+ 	for (i = 0; i < 3; i++)
+-		writel(0x00000000, spec->mem_base + addr[i]);
++		{ writel(0x00000000, spec->mem_base + addr[i]); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+ 	cur_addr = i;
+ 	switch (ca0132_quirk(spec)) {
+@@ -9261,7 +9261,7 @@
+ 	}
+ 
+ 	for (i = 0; i < 2; i++)
+-		writel(tmp[i], spec->mem_base + addr[cur_addr + i]);
++		{ writel(tmp[i], spec->mem_base + addr[cur_addr + i]); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+ 	cur_addr += i;
+ 
+@@ -9277,7 +9277,7 @@
+ 	}
+ 
+ 	for (i = 0; i < count; i++)
+-		writel(data[i], spec->mem_base + addr[cur_addr + i]);
++		{ writel(data[i], spec->mem_base + addr[cur_addr + i]); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ }
+ 
+ static void ca0132_mmio_init_ae5(struct hda_codec *codec)
+@@ -9291,8 +9291,8 @@
+ 	count = ARRAY_SIZE(ca0113_mmio_init_data_ae5);
+ 
+ 	if (ca0132_quirk(spec) == QUIRK_AE7) {
+-		writel(0x00000680, spec->mem_base + 0x1c);
+-		writel(0x00880680, spec->mem_base + 0x1c);
++		{ writel(0x00000680, spec->mem_base + 0x1c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
++		{ writel(0x00880680, spec->mem_base + 0x1c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	}
+ 
+ 	for (i = 0; i < count; i++) {
+@@ -9301,15 +9301,15 @@
+ 		 * a different value to 0x20c.
+ 		 */
+ 		if (i == 21 && ca0132_quirk(spec) == QUIRK_AE7) {
+-			writel(0x00800001, spec->mem_base + addr[i]);
++			{ writel(0x00800001, spec->mem_base + addr[i]); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 			continue;
+ 		}
+ 
+-		writel(data[i], spec->mem_base + addr[i]);
++		{ writel(data[i], spec->mem_base + addr[i]); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 	}
+ 
+ 	if (ca0132_quirk(spec) == QUIRK_AE5)
+-		writel(0x00880680, spec->mem_base + 0x1c);
++		{ writel(0x00880680, spec->mem_base + 0x1c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ }
+ 
+ static void ca0132_mmio_init(struct hda_codec *codec)
+@@ -9371,19 +9371,19 @@
+ 	}
+ 
+ 	for (i = cur_addr = 0; i < 3; i++, cur_addr++)
+-		writeb(tmp[i], spec->mem_base + addr[cur_addr]);
++		{ writeb(tmp[i], spec->mem_base + addr[cur_addr]); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+ 	/*
+ 	 * First writes are in single bytes, final are in 4 bytes. So, we use
+ 	 * writeb, then writel.
+ 	 */
+ 	for (i = 0; cur_addr < 12; i++, cur_addr++)
+-		writeb(data[i], spec->mem_base + addr[cur_addr]);
++		{ writeb(data[i], spec->mem_base + addr[cur_addr]); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+ 	for (; cur_addr < count; i++, cur_addr++)
+-		writel(data[i], spec->mem_base + addr[cur_addr]);
++		{ writel(data[i], spec->mem_base + addr[cur_addr]); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+-	writel(0x00800001, spec->mem_base + 0x20c);
++	{ writel(0x00800001, spec->mem_base + 0x20c); (void)readw(codec->core.bus->remap_addr); /* AE-7/ASM1083 flush */ }
+ 
+ 	if (ca0132_quirk(spec) == QUIRK_AE7) {
+ 		ca0113_mmio_command_set_type2(codec, 0x48, 0x07, 0x83);

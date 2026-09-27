@@ -1,0 +1,31 @@
+# Stock snd_hda_intel (7.2.6 PREEMPT_RT), card moved from vfio-pci to snd_hda_intel at runtime, enable_msi=0, dyndbg=+p.
+# Probe stops after 'Clearing TCSEL'; ~4 s later the platform EC starts timing out; config reads of 07:00.0/08:00.0 return 0xffff; machine hard-locks ~50 s later.
+# 'AE7 ...' lines are markers written to /dev/kmsg by the test harness. Captured over netconsole.
+[  634.645582] AE7 TEST1b vfio->snd_hda_intel (enable_msi=0) 08:24:59
+[  634.743586] AE7 TEST1b unbound vfio
+[  634.743885] snd_hda_intel 0000:08:00.0: enabling device (0000 -> 0002)
+[  634.743993] snd_hda_intel 0000:08:00.0: Using LPIB position fix
+[  634.743998] snd_hda_intel 0000:08:00.0: Force to non-snoop mode
+[  634.744072] AE7 TEST1b bind returned 0
+[  634.744078] snd_hda_intel 0000:08:00.0: chipset global capabilities = 0x6401
+[  634.744084] snd_hda_intel 0000:08:00.0: Disabling 64bit DMA
+[  634.749719] snd_hda_intel 0000:08:00.0: Clearing TCSEL
+[  638.791304] ACPI Error: AE_TIME, Returned by Handler for [EmbeddedControl] (20260408/evregion-303)
+[  638.791334] ACPI Error: Timeout from EC hardware or EC device driver (20260408/evregion-313)
+[  638.791354] ACPI Error: Aborting method \_SB.PCI0.SBRG.EC0.ECFX due to previous error (AE_TIME) (20260408/psparse-543)
+[  638.791369] ACPI Error: Aborting method \_SB.PCI0.SBRG.EC0.ECCM due to previous error (AE_TIME) (20260408/psparse-543)
+[  638.791380] ACPI Error: Aborting method \AMW0.WECB due to previous error (AE_TIME) (20260408/psparse-543)
+[  638.791389] ACPI Error: Aborting method \AMW0.UPEC due to previous error (AE_TIME) (20260408/psparse-543)
+[  638.791396] ACPI Error: Aborting method \AMW0.UPSB due to previous error (AE_TIME) (20260408/psparse-543)
+[  638.791404] ACPI Error: Aborting method \AMW0.WMBD due to previous error (AE_TIME) (20260408/psparse-543)
+[  639.800865] AE7 TEST1b alive +5s
+[  641.820145] ACPI Error: AE_TIME, Returned by Handler for [EmbeddedControl] (20260408/evregion-303)
+[  641.820173] ACPI Error: Timeout from EC hardware or EC device driver (20260408/evregion-313)
+[  641.820187] ACPI Error: Aborting method \_SB.PCI0.SBRG.EC0.ECFX due to previous error (AE_TIME) (20260408/psparse-543)
+[  641.820199] ACPI Error: Aborting method \_SB.PCI0.SBRG.EC0.ECCM due to previous error (AE_TIME) (20260408/psparse-543)
+[  641.820211] ACPI Error: Aborting method \AMW0.WECB due to previous error (AE_TIME) (20260408/psparse-543)
+[  641.820219] ACPI Error: Aborting method \AMW0.UPEC due to previous error (AE_TIME) (20260408/psparse-543)
+[  641.820226] ACPI Error: Aborting method \AMW0.UPSB due to previous error (AE_TIME) (20260408/psparse-543)
+[  641.820233] ACPI Error: Aborting method \AMW0.WMBD due to previous error (AE_TIME) (20260408/psparse-543)
+[  644.848837] ACPI Error: AE_TIME, Returned by Handler for [EmbeddedControl] (20260408/evregion-303)
+[  644.848863] ACPI Error: Timeout from EC hardware or EC device driver (20260408/evregion-313)

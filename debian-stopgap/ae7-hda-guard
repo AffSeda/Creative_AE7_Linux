@@ -1,0 +1,13 @@
+#!/bin/sh
+# modprobe "install" hook for snd_hda_intel (see /etc/modprobe.d/ae7-hda.conf).
+# The stock snd_hda_intel hard-locks any machine with a Creative AE-7 (ASMedia ASM1083
+# bridge) through a posted-write burst. Only hand the card to snd_hda_intel when this
+# kernel has the patched modules built by ae7-hda-build; otherwise park it on pci-stub
+# so the rest of the system's audio still loads and the machine does not hang.
+k=$(uname -r)
+if [ ! -f "/lib/modules/$k/updates/ae7/.built-ok" ]; then
+	logger -t ae7-hda-guard "no patched HDA modules for $k: parking AE-7 (1102:0010) on pci-stub"
+	/sbin/modprobe pci-stub
+	echo "1102 0010" > /sys/bus/pci/drivers/pci-stub/new_id 2>/dev/null || true
+fi
+exec /sbin/modprobe --ignore-install snd_hda_intel "$@"

@@ -1,0 +1,111 @@
+# sysrq-l (NMI backtraces of all CPUs) 1-5 s after binding the stock driver.
+# CPUs 0 and 1 never answer the NMI in any of the four captures (consistent with a CPU stalled on an MMIO read that never completes).
+# Other CPUs pile up in cpa_flush()->on_each_cpu (IPI to the stuck CPUs) from set_memory_wc/set_memory_rw callers.
+[  737.784466] AE7 TEST4 driver bind + sysrq-l capture 09:26:31
+[  737.788117] snd_hda_intel 0000:08:00.0: enabling device (0000 -> 0002)
+[  737.788216] snd_hda_intel 0000:08:00.0: Force to non-snoop mode
+[  738.789210] AE7 TEST4 sysrq-l at +1s
+[  738.789263] sysrq: Show backtrace of all active CPUs
+[  738.789268] NMI backtrace for cpu 62
+[  738.789275] CPU: 62 UID: 0 PID: 43621 Comm: sh Tainted: G S         OE       7.2.6+deb14-rt-amd64 #1 PREEMPT_{RT,(full)}  Debian 7.2.6-1 
+[  738.789284] Tainted: [S]=CPU_OUT_OF_SPEC, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+[  738.789286] Hardware name: ASUS System Product Name/ROG ZENITH EXTREME ALPHA, BIOS 2701 02/02/2024
+[  738.789290] Call Trace:
+[  738.789295]  <TASK>
+[  738.789300]  dump_stack_lvl+0x5d/0x80
+[  738.789314]  nmi_cpu_backtrace.cold+0x18/0x73
+[  738.789319]  ? __pfx_nmi_raise_cpu_backtrace+0x10/0x10
+[  738.789326]  nmi_trigger_cpumask_backtrace+0x132/0x160
+[  738.789335]  __handle_sysrq.cold+0xba/0x1b9
+[  738.789343]  ? srso_return_thunk+0x5/0x5f
+[  738.789349]  ? security_file_permission+0x55/0x100
+[  738.789356]  ? srso_return_thunk+0x5/0x5f
+[  738.789360]  write_sysrq_trigger+0x7b/0xb0
+[  738.789369]  proc_reg_write+0x5a/0xb0
+[  738.789376]  vfs_write+0xe6/0x560
+[  738.789385]  ? srso_return_thunk+0x5/0x5f
+[  738.789388]  ? filp_flush+0x58/0x80
+[  738.789395]  ? srso_return_thunk+0x5/0x5f
+[  738.789398]  ? __x64_sys_close+0x47/0xa0
+[  738.789403]  ? srso_return_thunk+0x5/0x5f
+[  738.789409]  ksys_write+0x81/0x110
+[  738.789415]  do_syscall_64+0xe1/0x650
+[  738.789422]  ? srso_return_thunk+0x5/0x5f
+[  738.789425]  ? do_syscall_64+0x11e/0x650
+[  738.789431]  ? srso_return_thunk+0x5/0x5f
+[  738.789434]  ? do_syscall_64+0x98/0x650
+[  738.789439]  ? exc_page_fault+0x90/0x1e0
+[  738.789446]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+[  738.789513]  </TASK>
+[  738.789515] Sending NMI from CPU 62 to CPUs 0-61,63:
+[  738.789525] NMI backtrace for cpu 2 skipped: idling at io_idle+0x3/0x30
+[  738.789536] NMI backtrace for cpu 16 skipped: idling at io_idle+0x3/0x30
+[  738.789560] NMI backtrace for cpu 49
+[  738.789571] CPU: 49 UID: 0 PID: 471 Comm: ksoftirqd/49 Tainted: G S         OE       7.2.6+deb14-rt-amd64 #1 PREEMPT_{RT,(full)}  Debian 7.2.6-1 
+[  738.789584] Tainted: [S]=CPU_OUT_OF_SPEC, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+[  738.789587] Hardware name: ASUS System Product Name/ROG ZENITH EXTREME ALPHA, BIOS 2701 02/02/2024
+[  738.789648] Call Trace:
+[  738.789652]  <TASK>
+[  738.789667]  dequeue_task_fair+0x31/0x3d0
+[  738.789677]  ? srso_return_thunk+0x5/0x5f
+[  738.789683]  ? update_rq_clock+0x7e/0x170
+[  738.789690]  ? srso_return_thunk+0x5/0x5f
+[  738.789695]  ? __pfx_dequeue_task_fair+0x10/0x10
+[  738.789701]  __schedule+0x6de/0x1040
+[  738.789712]  ? __pfx_smpboot_thread_fn+0x10/0x10
+[  738.789720]  schedule+0x27/0xa0
+[  738.789725]  smpboot_thread_fn+0x190/0x220
+[  738.789733]  kthread+0xe4/0x120
+[  738.789741]  ? __pfx_kthread+0x10/0x10
+[  738.789748]  ret_from_fork+0x2b1/0x340
+[  738.789756]  ? __pfx_kthread+0x10/0x10
+[  738.789762]  ret_from_fork_asm+0x1a/0x30
+[  738.789779]  </TASK>
+[  738.789782] NMI backtrace for cpu 17 skipped: idling at io_idle+0x3/0x30
+[  738.789790] NMI backtrace for cpu 19 skipped: idling at io_idle+0x3/0x30
+[  738.789802] NMI backtrace for cpu 51 skipped: idling at io_idle+0x3/0x30
+[  738.789808] NMI backtrace for cpu 48 skipped: idling at io_idle+0x3/0x30
+[  738.789814] NMI backtrace for cpu 18 skipped: idling at io_idle+0x3/0x30
+[  738.789825] NMI backtrace for cpu 50 skipped: idling at io_idle+0x3/0x30
+[  738.789834] NMI backtrace for cpu 7 skipped: idling at io_idle+0x3/0x30
+[  738.789845] NMI backtrace for cpu 39 skipped: idling at io_idle+0x3/0x30
+[  738.789850] NMI backtrace for cpu 5
+[  738.789858] CPU: 5 UID: 0 PID: 1050 Comm: kworker/5:1 Tainted: G S         OE       7.2.6+deb14-rt-amd64 #1 PREEMPT_{RT,(full)}  Debian 7.2.6-1 
+[  738.789865] Tainted: [S]=CPU_OUT_OF_SPEC, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+[  738.789867] Hardware name: ASUS System Product Name/ROG ZENITH EXTREME ALPHA, BIOS 2701 02/02/2024
+[  738.789870] Workqueue: events do_free_init
+[  738.789905] Call Trace:
+[  738.789908]  <TASK>
+[  738.789913]  ? __pfx_do_flush_tlb_all+0x10/0x10
+[  738.789921]  on_each_cpu_cond_mask+0x24/0x40
+[  738.789924]  cpa_flush+0x56/0x350
+[  738.789929]  ? srso_return_thunk+0x5/0x5f
+[  738.789933]  change_page_attr_set_clr+0x16f/0x1d0
+[  738.789942]  set_memory_rw+0x28/0x40
+[  738.789946]  __execmem_cache_free+0x5a/0xc0
+[  738.789951]  execmem_free+0xd9/0x1a0
+[  738.789956]  ? exit_nls_utf8+0xf20/0xf20 [nls_utf8]
+[  738.789960]  ? intel_nhlt_ssp_endpoint_mask.cold+0xc88/0xc89 [snd_intel_dspcfg]
+[  738.789965]  do_free_init+0x39/0x70
+[  738.789969]  process_one_work+0x19e/0x370
+[  738.789974]  worker_thread+0x1a6/0x310
+[  738.789978]  ? __pfx_worker_thread+0x10/0x10
+[  738.789981]  kthread+0xe4/0x120
+[  738.789986]  ? __pfx_kthread+0x10/0x10
+[  738.789990]  ret_from_fork+0x2b1/0x340
+[  738.789994]  ? __pfx_kthread+0x10/0x10
+[  738.789998]  ret_from_fork_asm+0x1a/0x30
+[  738.790333] Tainted: [S]=CPU_OUT_OF_SPEC, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+[  738.790337] Hardware name: ASUS System Product Name/ROG ZENITH EXTREME ALPHA, BIOS 2701 02/02/2024
+[  738.790376] Call Trace:
+[  738.790380]  <TASK>
+[  738.790386]  ? srso_return_thunk+0x5/0x5f
+[  738.790391]  ? __memcg_kmem_charge_page+0x1dd/0x2b0
+[  738.790401]  rt_spin_lock+0xd6/0x140
+[  738.790405]  pgd_alloc+0xee/0x2f0
+[  738.790413]  mm_init+0x1f4/0x3c0
+[  738.790419]  alloc_bprm+0xd1/0x280
+[  738.790425]  do_execveat_common.isra.0+0x92/0x1b0
+[  738.790429]  ? srso_return_thunk+0x5/0x5f
+[  738.790434]  __x64_sys_execve+0x3d/0x60
+[  738.790596] NMI backtrace for cpu 24 skipped: idling at io_idle+0x3/0x30

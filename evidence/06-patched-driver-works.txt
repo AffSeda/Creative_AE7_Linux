@@ -1,0 +1,24 @@
+# Patched modules (patches/workaround-flush-every-hda-write.patch), normal boot, no test options.
+[    0.686612] pci 0000:08:00.0: [1102:0010] type 00 class 0x040300 conventional PCI endpoint
+[    0.686702] pci 0000:08:00.0: BAR 0 [mem 0x9ff04000-0x9ff07fff 64bit]
+[    0.686710] pci 0000:08:00.0: BAR 2 [mem 0x9ff00000-0x9ff03fff 64bit]
+[    0.686782] pci 0000:08:00.0: supports D2
+[    0.767855] pci 0000:08:00.0: Adding to iommu group 18
+[   16.723617] snd_hda_intel 0000:08:00.0: enabling device (0000 -> 0002)
+[   16.723663] snd_hda_intel 0000:08:00.0: Force to non-snoop mode
+[   16.832399] snd_hda_codec_ca0132 hdaudioC0D1: CA0132: picked fixup  for PCI SSID 1102:0081
+[   16.833876] snd_hda_codec_ca0132 hdaudioC0D1: autoconfig for Sound Blaster AE-7: line_outs=3 (0xb/0xf/0x10/0x0/0x0) type:line
+[   16.833881] snd_hda_codec_ca0132 hdaudioC0D1:    speaker_outs=0 (0x0/0x0/0x0/0x0/0x0)
+[   16.833885] snd_hda_codec_ca0132 hdaudioC0D1:    hp_outs=0 (0x0/0x0/0x0/0x0/0x0)
+[   16.833888] snd_hda_codec_ca0132 hdaudioC0D1:    mono: mono_out=0x0
+[   16.833890] snd_hda_codec_ca0132 hdaudioC0D1:    dig-out=0xc/0x0
+[   16.833893] snd_hda_codec_ca0132 hdaudioC0D1:    inputs:
+[   16.833895] snd_hda_codec_ca0132 hdaudioC0D1:      Mic=0x12
+[   16.833898] snd_hda_codec_ca0132 hdaudioC0D1:      Line=0x11
+[   16.833900] snd_hda_codec_ca0132 hdaudioC0D1:      Line=0x13
+[   16.833902] snd_hda_codec_ca0132 hdaudioC0D1:    dig-in=0xe
+[   17.473378] snd_hda_codec_ca0132 hdaudioC0D1: ca0132 DSP downloaded and running
+[   18.810694] input: HDA Creative Mic as /devices/pci0000:00/0000:00:01.1/0000:01:00.2/0000:02:04.0/0000:07:00.0/0000:08:00.0/sound/card0/input37
+[   18.810888] input: HDA Creative Line as /devices/pci0000:00/0000:00:01.1/0000:01:00.2/0000:02:04.0/0000:07:00.0/0000:08:00.0/sound/card0/input38
+[   18.811072] input: HDA Creative Line Out Front as /devices/pci0000:00/0000:00:01.1/0000:01:00.2/0000:02:04.0/0000:07:00.0/0000:08:00.0/sound/card0/input39
+[   18.811252] input: HDA Creative Line Out CLFE as /devices/pci0000:00/0000:00:01.1/0000:01:00.2/0000:02:04.0/0000:07:00.0/0000:08:00.0/sound/card0/input40

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Build the AE-7 patched HDA modules for a newly installed kernel. Never fails the install.
+/usr/local/sbin/ae7-hda-build "$1" >/dev/null 2>&1 || true
+exit 0

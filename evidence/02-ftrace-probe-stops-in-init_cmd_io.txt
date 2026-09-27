@@ -1,0 +1,57 @@
+# function_graph ftrace of the stock driver's probe (filter: snd_hda_intel, snd_hda_core, snd_hda_codec), streamed off-box.
+# CPU 0 enters snd_hdac_bus_init_cmd_io() and never records another event; other CPUs keep tracing for ~50 s.
+# (Earlier lines show the probe path; later CPU 17/49 lines are other HDA controllers and are omitted.)
+  259.198517 |    0)               |  azx_probe [snd_hda_intel]() {
+  259.198770 |    0)   1.924 us    |    get_bound_vga.isra.0 [snd_hda_intel]();
+  259.198782 |    0)               |    azx_bus_init [snd_hda_codec]() {
+  259.198782 |    0)   0.751 us    |      snd_hdac_bus_init [snd_hda_core]();
+  259.198784 |    0)   1.984 us    |    }
+  259.198785 |    0)   0.471 us    |    get_bound_vga.isra.0 [snd_hda_intel]();
+  259.198787 |    0) ! 271.329 us  |  }
+  259.198796 |    0)               |  azx_probe_work [snd_hda_intel]() {
+  259.198796 |    0)               |    azx_probe_continue [snd_hda_intel]() {
+  259.198797 |    0)   0.541 us    |      snd_hdac_display_power [snd_hda_core]();
+  259.198854 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198854 |    0)   0.541 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198855 |    0)   1.694 us    |      }
+  259.198856 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198857 |    0)   0.471 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198858 |    0)   1.393 us    |      }
+  259.198858 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198859 |    0)   0.491 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198860 |    0)   1.403 us    |      }
+  259.198860 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198861 |    0)   0.471 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198862 |    0)   1.393 us    |      }
+  259.198863 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198863 |    0)   0.470 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198864 |    0)   1.402 us    |      }
+  259.198865 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198865 |    0)   0.461 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198866 |    0)   1.392 us    |      }
+  259.198867 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198868 |    0)   0.461 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198869 |    0)   1.423 us    |      }
+  259.198870 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198870 |    0)   0.471 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198871 |    0)   1.403 us    |      }
+  259.198872 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198873 |    0)   0.471 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198873 |    0)   1.403 us    |      }
+  259.198874 |    0)               |      azx_add_stream [snd_hda_codec]() {
+  259.198875 |    0)   0.461 us    |        snd_hdac_stream_init [snd_hda_core]();
+  259.198876 |    0)   1.393 us    |      }
+  259.198876 |    0)               |      snd_hdac_bus_alloc_stream_pages [snd_hda_core]() {
+  259.202510 |    0) # 3633.305 us |      }
+  259.202526 |    0)               |      azx_init_pci [snd_hda_intel]() {
+  259.202544 |    0) + 17.032 us   |      }
+  259.202545 |    0)   0.421 us    |      snd_hdac_i915_set_bclk [snd_hda_core]();
+  259.202546 |    0)               |      hda_intel_init_chip [snd_hda_intel]() {
+  259.202547 |    0)   0.310 us    |        snd_hdac_set_codec_wakeup [snd_hda_core]();
+  259.202548 |    0)               |        azx_init_chip [snd_hda_codec]() {
+  259.202548 |    0)               |          snd_hdac_bus_init_chip [snd_hda_core]() {
+  259.202548 |    0)               |            snd_hdac_bus_reset_link [snd_hda_core]() {
+  259.202552 |    0)   7.344 us    |              snd_hdac_bus_enter_link_reset [snd_hda_core]();
+  259.203572 |    0) # 1016.677 us |              snd_hdac_bus_exit_link_reset [snd_hda_core]();
+  259.205802 |    0) # 3247.511 us |            }
+  259.205803 |    0)               |            snd_hdac_bus_init_cmd_io [snd_hda_core]() {

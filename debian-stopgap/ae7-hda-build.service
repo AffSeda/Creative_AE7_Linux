@@ -1,0 +1,12 @@
+[Unit]
+Description=Build AE-7 patched HDA modules for installed kernels if missing
+After=local-fs.target
+
+[Service]
+Type=simple
+Nice=19
+ExecStart=/usr/local/sbin/ae7-hda-build --all
+SuccessExitStatus=1
+
+[Install]
+WantedBy=multi-user.target

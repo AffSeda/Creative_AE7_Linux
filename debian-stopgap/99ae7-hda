@@ -1,0 +1,3 @@
+// After every dpkg run, (re)try building the AE-7 patched HDA modules for any kernel
+// that lacks them (covers linux-source arriving after linux-image in the same upgrade).
+DPkg::Post-Invoke { "if [ -x /usr/local/sbin/ae7-hda-build ]; then /usr/local/sbin/ae7-hda-build --all >/dev/null 2>&1 || true; fi"; };

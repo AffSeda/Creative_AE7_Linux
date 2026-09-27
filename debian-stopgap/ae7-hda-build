@@ -1,0 +1,62 @@
+#!/bin/bash
+# ae7-hda-build: build the HDA modules patched for the Creative AE-7 (ASMedia ASM1083
+# bridge) posted-write lockup, for one kernel or for every installed kernel.
+#   ae7-hda-build <kernel-version>   build for that kernel
+#   ae7-hda-build --all              build for every kernel in /lib/modules that lacks them
+# Needs: linux-headers-<kver> and linux-source-<major.minor> at the SAME Debian version
+# as linux-image-<kver>. Never fails loudly: the boot guard keeps the card parked on
+# pci-stub for any kernel without patched modules, so a missed build = silent card, not a hang.
+set -uo pipefail
+LOG=/var/log/ae7-hda-build.log
+PATCH=/usr/local/lib/ae7/ae7-hda-flush-posted-writes.patch
+MODS="core/snd-hda-core.ko common/snd-hda-codec.ko controllers/snd-hda-intel.ko codecs/snd-hda-codec-ca0132.ko"
+
+log() { echo "$(date '+%F %T') $*" | tee -a "$LOG" >&2; }
+
+build_one() {
+	local k=$1 dest=/lib/modules/$1/updates/ae7
+	[ -f "$dest/.built-ok" ] && return 0
+	local kb=/lib/modules/$k/build
+	[ -d "$kb" ] || { log "$k: skipped, no headers ($kb)"; return 1; }
+	local pkgver mm tb srcver
+	pkgver=$(dpkg-query -W -f='${Version}' "linux-image-$k" 2>/dev/null) || { log "$k: skipped, not a Debian kernel package"; return 1; }
+	mm=$(echo "$k" | cut -d. -f1,2)
+	tb=$(ls /usr/src/linux-source-"$mm".tar.* 2>/dev/null | head -1)
+	srcver=$(dpkg-query -W -f='${Version}' "linux-source-$mm" 2>/dev/null || true)
+	if [ -z "$tb" ] || [ "$srcver" != "$pkgver" ]; then
+		log "$k: waiting for linux-source-$mm=$pkgver (installed: ${srcver:-none}); AE-7 stays parked on this kernel"
+		return 1
+	fi
+	local w; w=$(mktemp -d /var/tmp/ae7-build.XXXXXX)
+	local s=$w/linux-source-$mm
+	log "$k: building from $tb ($srcver)"
+	tar -C "$w" -xf "$tb" --wildcards "linux-source-$mm/sound/hda/*" "linux-source-$mm/include/sound/*" \
+	&& (cd "$s" && patch -p1 --forward --batch < "$PATCH") >>"$LOG" 2>&1 \
+	|| { log "$k: FAILED to extract or apply the patch (source changed?); see $LOG"; rm -rf "$w"; return 1; }
+	mkdir -p "$w/ovr/sound" && cp "$s/include/sound/hdaudio.h" "$w/ovr/sound/"
+	local d ok=1
+	local extra
+	for d in core common controllers codecs; do
+		extra=; [ "$d" != core ] && extra="KBUILD_EXTRA_SYMBOLS=$s/sound/hda/core/Module.symvers"
+		nice -n 19 make -C "$kb" M="$s/sound/hda/$d" NOSTDINC_FLAGS="-nostdinc -I$w/ovr" \
+			$extra modules -j"$(nproc)" >>"$LOG" 2>&1 || ok=0
+	done
+	local m
+	for m in $MODS; do
+		[ -f "$s/sound/hda/$m" ] && [ "$(modinfo -F vermagic "$s/sound/hda/$m" | awk '{print $1}')" = "$k" ] || ok=0
+	done
+	if [ $ok = 0 ]; then log "$k: FAILED to build; see $LOG"; rm -rf "$w"; return 1; fi
+	rm -rf "$dest.new" && mkdir -p "$dest.new"
+	for m in $MODS; do cp "$s/sound/hda/$m" "$dest.new/"; done
+	cp "$PATCH" "$dest.new/" && touch "$dest.new/.built-ok"
+	rm -rf "$dest" && mv "$dest.new" "$dest"
+	depmod -a "$k"
+	rm -rf "$w"
+	log "$k: OK, patched modules installed in $dest (reboot into $k to use them)"
+}
+
+case "${1:-}" in
+	--all) rc=0; for k in $(ls /lib/modules); do [ -d "/lib/modules/$k/kernel" ] && { build_one "$k" || rc=1; }; done; exit $rc ;;
+	"") echo "usage: $0 <kernel-version> | --all" >&2; exit 2 ;;
+	*) build_one "$1" ;;
+esac
