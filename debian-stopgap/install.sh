@@ -10,11 +10,15 @@ command -v dpkg-query >/dev/null || die "this script is for Debian (dpkg-based) 
 K=$(uname -r)
 dpkg-query -W "linux-image-$K" >/dev/null 2>&1 || die "running kernel $K is not a Debian linux-image package; use the manual route in ../README.md"
 
-# The fix is only for the AE-7 revision with the ASMedia ASM1083/1085 bridge.
-if ! lspci -n -d 1102:0010 | grep -q .; then die "no Creative CA0132 (1102:0010) found"; fi
-if ! lspci -n -d 1b21:1080 | grep -q .; then
-	echo "WARNING: no ASMedia ASM1083/1085 bridge (1b21:1080) found; your card may be the IDT revision, which does not need this." >&2
-	read -r -p "Continue anyway? [y/N] " a; [ "$a" = y ] || exit 1
+# The fix is for the AE-7 revision with the ASMedia ASM1083/1085 bridge. It is harmless on
+# other hardware (one extra register read per HDA register write), so these are only prompts.
+# Installing BEFORE fitting the card is the easiest route, so a missing card is allowed.
+if ! lspci -n -d 1102:0010 | grep -q .; then
+	echo "No Creative CA0132 (1102:0010) found. That is expected if you are installing before fitting the card." >&2
+	read -r -p "Install anyway? [y/N] " a; [ "$a" = y ] || exit 1
+elif ! lspci -n -d 1b21:1080 | grep -q .; then
+	echo "Card found but no ASMedia ASM1083/1085 bridge (1b21:1080): this looks like the IDT revision, which does not need this." >&2
+	read -r -p "Install anyway? [y/N] " a; [ "$a" = y ] || exit 1
 fi
 
 # Unsigned modules: refuse under Secure Boot rather than leave a guard that parks the card forever.
@@ -51,6 +55,9 @@ echo "Done. Before rebooting, remove any workaround you added earlier to keep th
 echo "snd_hda_intel, or it will stay parked:"
 grep -rsHnE '^[[:space:]]*(blacklist[[:space:]]+snd_hda_intel|install[[:space:]]+snd_hda_intel|options[[:space:]]+(vfio-pci|vfio_pci|pci-stub|pci_stub)[[:space:]].*1102:0010|softdep[[:space:]]+snd_hda_intel[[:space:]]+pre:.*vfio)' /etc/modprobe.d/ \
 	| grep -v '/ae7-hda.conf:' | sed 's/^/  remove or comment out: /' || true
-grep -qE 'pci-stub.ids=[^ ]*1102:0010|vfio-pci.ids=[^ ]*1102:0010|blacklist=[^ ]*snd_hda_intel' /proc/cmdline \
+grep -qE 'pci-stub.ids=[^ ]*1102:0010|vfio-pci.ids=[^ ]*1102:0010' /proc/cmdline \
 	&& echo "  check: your kernel command line has a pci-stub/vfio/blacklist entry for the card" || true
-echo "Then reboot. Afterwards 'lspci -k -d 1102:0010' should show 'Kernel driver in use: snd_hda_intel'."
+grep -qE 'modprobe.blacklist=[^ ]*snd_hda_intel' /proc/cmdline \
+	&& echo "  (this boot used modprobe.blacklist=snd_hda_intel from the boot menu; that is fine, just do not add it next time)" || true
+echo "Then reboot (or shut down and fit the card). Afterwards 'lspci -k -d 1102:0010' should show"
+echo "'Kernel driver in use: snd_hda_intel'."

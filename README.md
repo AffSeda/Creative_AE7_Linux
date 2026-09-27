@@ -27,12 +27,32 @@ proven and what is inferred, and a suggested shape for a proper upstream fix.
 This is for people with the ASM1083-bridge AE-7 who want sound before a real kernel fix
 exists. It replaces four sound modules with rebuilt ones, so read the whole section first.
 
-**Check that this is your card:**
-- `lspci -nn` must show both
-  `Creative Labs CA0132 Sound Core3D [1102:0010]` and
-  `ASMedia ASM1083/1085 PCIe to PCI Bridge [1b21:1080]`.
-- If there is no ASMedia bridge, you have the IDT revision, which already works and
-  does not need this.
+**Which card revision?** The affected revision has an ASMedia ASM1083/1085 bridge chip on
+the card. In Linux it shows up in `lspci -nn` as `1b21:1080`, next to the card's own
+`1102:0010`. The older IDT-bridge revision works without this. You do not have to be sure
+before installing: on other hardware the workaround should only cost one extra register
+read per HDA register write. It has only been run on the test machine.
+
+**The catch: you cannot simply boot with the card fitted.** The stock driver attaches
+while the system boots, so the machine may lock up before you reach a desktop. Use one of
+these:
+
+- **A. Install first, then fit the card (easiest).** Run the installer with the card
+  removed. It will say the card was not found; answer `y`. Then shut down, fit the card,
+  and boot normally.
+- **B. The card is already fitted.** For one boot, stop the sound driver from loading.
+  1. At the boot menu, select your normal entry and press `e` (GRUB and systemd-boot both
+     use `e`).
+  2. On the line starting with `linux` (GRUB) or on the options line (systemd-boot), add
+     ` modprobe.blacklist=snd_hda_intel` at the end.
+  3. Boot with Ctrl+X or F10 (GRUB) or Enter (systemd-boot).
+
+  That boot has no sound at all, including onboard and HDMI, but it is stable. Run the
+  installer, then reboot normally without the extra parameter. The edit only lasts for
+  that one boot.
+
+  If pressing `e` does nothing on systemd-boot, the editor is disabled (`editor no` in
+  `loader/loader.conf`). Use option A: take the card out, install, then refit it.
 
 **Requirements:**
 - **Secure Boot must be off.** The rebuilt modules are unsigned, and the installer
@@ -56,7 +76,8 @@ sudo ./install.sh
 ```
 
 The installer does the following:
-1. Checks for the card and the bridge, and refuses to run with Secure Boot on.
+1. Checks for the card and the bridge (only asking if they are missing), and refuses to
+   run with Secure Boot on.
 2. Installs `linux-source` and the kernel headers.
 3. Builds patched modules for the running kernel and installs them in
    `/lib/modules/<kernel>/updates/ae7/`.
@@ -76,9 +97,15 @@ kernel. In that case a guard keeps the card away from the driver at boot. The ca
 silent on that kernel and the machine does not hang. Check `/var/log/ae7-hda-build.log`
 and `journalctl -t ae7-hda-guard`.
 
-**To remove it:** run `sudo ./uninstall.sh`. Before rebooting, either remove the card or
-keep it off the stock driver yourself (for example with the kernel parameter
-`pci-stub.ids=1102:0010`). Otherwise the stock driver will hang the machine again.
+**To remove it:** run `sudo ./uninstall.sh`. Before rebooting, either take the card out
+or keep it away from the stock driver, or the machine will hang again. To keep the card
+away, hand it to `vfio-pci`:
+1. Create `/etc/modprobe.d/ae7-park.conf` containing
+   `options vfio-pci ids=1102:0010` and `softdep snd_hda_intel pre: vfio-pci`,
+   one per line.
+2. Run `update-initramfs -u`.
+
+`uninstall.sh` prints these steps too.
 
 ### Manual route (any distribution)
 
@@ -97,6 +124,7 @@ This route assumes you know how to build kernel modules.
 5. Protect yourself from kernel updates: either rebuild for every new kernel, or keep
    the card off `snd_hda_intel` on kernels you have not rebuilt for. The guard in
    `debian-stopgap/ae7-hda-guard` is one way to do that.
+   - Until the patched modules are installed, use option A or B above to get a stable boot.
 
 ### Reporting results
 
