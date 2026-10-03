@@ -71,7 +71,7 @@ these:
 |---|---|
 | **Debian** (tested on Debian forky, kernel 7.2.6) | Automated: `debian-stopgap/install.sh` below |
 | Ubuntu, Mint, other Debian derivatives | Not tested. The script expects Debian's `linux-source-X.Y` package naming and versioning; it has not been checked against Ubuntu's. Use the manual route unless you adapt it. |
-| Other distributions | Manual route |
+| Other distributions | Manual route and untested; I don't have access to any non-Debian machines. |
 | Kernels that still keep HDA under `sound/pci/hda/` (older kernels) | The patch needs adapting to the old file paths. The change itself is small. |
 
 ### Debian: automated install
